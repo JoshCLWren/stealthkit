@@ -25,15 +25,15 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
 
 import structlog
+from playwright.async_api import BrowserContext
 
 logger = structlog.get_logger(__name__)
 
 
 async def save_cookies(
-    context: Any,
+    context: BrowserContext,
     path: str | Path,
 ) -> None:
     """Save browser cookies to a JSON file.
@@ -54,7 +54,7 @@ async def save_cookies(
 
 
 async def load_cookies(
-    context: Any,
+    context: BrowserContext,
     path: str | Path,
 ) -> bool:
     """Load browser cookies from a JSON file.
@@ -82,7 +82,7 @@ async def load_cookies(
 
 
 async def clear_cookies(
-    context: Any,
+    context: BrowserContext,
 ) -> None:
     """Clear all cookies from the browser context.
 
@@ -94,7 +94,7 @@ async def clear_cookies(
 
 
 async def get_cookie_names(
-    context: Any,
+    context: BrowserContext,
 ) -> list[str]:
     """Get names of all cookies in the context.
 
@@ -109,7 +109,7 @@ async def get_cookie_names(
 
 
 async def has_cookie(
-    context: Any,
+    context: BrowserContext,
     name: str,
     domain: str | None = None,
 ) -> bool:
@@ -134,7 +134,7 @@ async def has_cookie(
 
 
 async def get_cookie_value(
-    context: Any,
+    context: BrowserContext,
     name: str,
     domain: str | None = None,
 ) -> str | None:

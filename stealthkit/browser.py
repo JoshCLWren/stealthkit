@@ -16,13 +16,15 @@ Usage:
 from __future__ import annotations
 
 import os
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import TracebackType
 from typing import Any
 
 import structlog
-from playwright.async_api import async_playwright
+from playwright.async_api import Browser, BrowserContext, Page, async_playwright
 
 logger = structlog.get_logger(__name__)
 
@@ -109,9 +111,9 @@ class StealthBrowser:
             config: Browser configuration (uses defaults if not provided)
         """
         self.config = config or BrowserConfig()
-        self.playwright: Any = None
-        self.browser: Any = None
-        self.context: Any = None
+        self.playwright = None
+        self.browser: Browser | None = None
+        self.context: BrowserContext | None = None
         self._logger = structlog.get_logger(__name__).bind(
             headless=self.config.headless,
             stealth_level=self.config.stealth_level,
@@ -126,7 +128,7 @@ class StealthBrowser:
         self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
-        exc_tb: Any,
+        exc_tb: TracebackType | None,
     ) -> None:
         """Exit async context and cleanup resources."""
         await self._close()
@@ -158,7 +160,7 @@ class StealthBrowser:
             self.context = await self.playwright.chromium.launch_persistent_context(
                 str(user_data_dir),
                 **launch_options,
-                viewport=self.config.viewport,
+                viewport=self.config.viewport,  # type: ignore[arg-type]
                 locale=self.config.locale,
                 timezone_id=self.config.timezone,
                 ignore_https_errors=True,
@@ -166,7 +168,7 @@ class StealthBrowser:
         else:
             self.browser = await self.playwright.chromium.launch(**launch_options)
             self.context = await self.browser.new_context(
-                viewport=self.config.viewport,
+                viewport=self.config.viewport,  # type: ignore[arg-type]
                 locale=self.config.locale,
                 timezone_id=self.config.timezone,
                 user_agent=self.config.user_agent,
@@ -194,7 +196,7 @@ class StealthBrowser:
             self.playwright = None
             self._logger.debug("playwright.stopped")
 
-    async def _apply_stealth_to_page(self, page: Any) -> None:
+    async def _apply_stealth_to_page(self, page: Page) -> None:
         """Apply stealth patches to a page.
 
         Args:
@@ -274,7 +276,7 @@ class StealthBrowser:
         return page
 
     @asynccontextmanager
-    async def page(self) -> Any:
+    async def page(self) -> AsyncIterator[Page]:
         """Context manager for getting a page that auto-closes.
 
         Usage:

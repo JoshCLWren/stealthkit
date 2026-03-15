@@ -17,9 +17,10 @@ from __future__ import annotations
 
 import asyncio
 import random
-from typing import Any
+from typing import Literal
 
 import structlog
+from playwright.async_api import Page
 
 logger = structlog.get_logger(__name__)
 
@@ -47,7 +48,7 @@ async def human_like_delay(
 
 
 async def random_mouse_movements(
-    page: Any,
+    page: Page,
     count: int = 3,
 ) -> None:
     """Perform random mouse movements on the page.
@@ -74,7 +75,7 @@ async def random_mouse_movements(
 
 
 async def human_scroll(
-    page: Any,
+    page: Page,
     distance: int = 1000,
 ) -> None:
     """Perform a human-like scroll down the page.
@@ -101,9 +102,9 @@ async def human_scroll(
 
 
 async def navigate_with_human_behavior(
-    page: Any,
+    page: Page,
     url: str,
-    wait_until: str = "domcontentloaded",
+    wait_until: Literal["commit", "domcontentloaded", "load", "networkidle"] = "domcontentloaded",
     timeout: float = 30000,
 ) -> None:
     """Navigate to a URL with human-like behavior.
@@ -133,7 +134,7 @@ async def navigate_with_human_behavior(
 
 
 async def type_like_human(
-    page: Any,
+    page: Page,
     selector: str,
     text: str,
     *,
@@ -177,7 +178,7 @@ async def type_like_human(
 
 
 async def scroll_to_element(
-    page: Any,
+    page: Page,
     selector: str,
 ) -> None:
     """Scroll an element into view with human-like behavior.

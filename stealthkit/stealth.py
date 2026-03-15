@@ -21,9 +21,8 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Any
-
 import structlog
+from playwright.async_api import Page
 from playwright_stealth import Stealth
 
 logger = structlog.get_logger(__name__)
@@ -218,7 +217,7 @@ STEALTH_LEVELS = {
 }
 
 
-async def apply_stealth(page: Any, level: str = "standard") -> None:
+async def apply_stealth(page: Page, level: str = "standard") -> None:
     """Apply stealth patches to a Playwright page.
 
     Uses playwright-stealth library for core patches plus additional

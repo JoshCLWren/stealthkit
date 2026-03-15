@@ -17,10 +17,11 @@ Usage:
 from __future__ import annotations
 
 import asyncio
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any
 
 import structlog
+from playwright.async_api import BrowserContext, Page
 
 logger = structlog.get_logger(__name__)
 
@@ -59,7 +60,7 @@ class PagePool:
     def __init__(
         self,
         size: int,
-        browser_context: Any,
+        browser_context: BrowserContext | None = None,
     ) -> None:
         """Initialize the page pool.
 
@@ -75,7 +76,7 @@ class PagePool:
 
         self.size = size
         self.browser_context = browser_context
-        self.available_pages: asyncio.Queue[Any] = asyncio.Queue(maxsize=size)
+        self.available_pages: asyncio.Queue[Page] = asyncio.Queue(maxsize=size)
         self.initialized = False
         self._logger = structlog.get_logger(__name__).bind(pool_size=size)
         self._semaphore = asyncio.Semaphore(size)
@@ -86,6 +87,9 @@ class PagePool:
         Creates all pages upfront for better performance.
         Also closes the initial blank page that Playwright creates.
         """
+        if self.browser_context is None:
+            raise RuntimeError("browser_context is required for initialization")
+
         if self.initialized:
             return
 
@@ -107,13 +111,17 @@ class PagePool:
         page = await self._create_clean_page()
         await self.available_pages.put(page)
 
-    async def _create_clean_page(self) -> Any:
+    async def _create_clean_page(self) -> Page:
         """Create a new page with animations disabled.
 
         Returns:
             New Playwright page with CSS animations disabled
         """
-        page = await self.browser_context.new_page()
+        if self.browser_context is None:
+            raise RuntimeError("browser_context is required")
+
+        context: BrowserContext = self.browser_context
+        page = await context.new_page()
 
         disable_animations = """
             *, *::before, *::after {
@@ -126,7 +134,7 @@ class PagePool:
         await page.add_style_tag(content=disable_animations)
         return page
 
-    async def get_page(self) -> Any:
+    async def get_page(self) -> Page:
         """Get a page from the pool.
 
         Wait for a page to become available if pool is exhausted.
@@ -151,7 +159,7 @@ class PagePool:
             self._logger.debug("pool.page_acquired")
             return page
 
-    async def release_page(self, page: Any) -> None:
+    async def release_page(self, page: Page) -> None:
         """Return a page to the pool.
 
         If page is closed, creates a replacement.
@@ -171,7 +179,7 @@ class PagePool:
             self._logger.debug("pool.page_released")
 
     @asynccontextmanager
-    async def acquire(self) -> Any:
+    async def acquire(self) -> AsyncIterator[Page]:
         """Context manager for automatic page acquisition and release.
 
         Usage:

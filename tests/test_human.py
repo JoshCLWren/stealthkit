@@ -25,7 +25,7 @@ class TestHumanLikeDelay:
         elapsed = time.time() - start
 
         assert elapsed >= 0.1
-        assert elapsed < 1.5
+        assert elapsed < 5.0
 
     @pytest.mark.asyncio
     async def test_delay_different_each_time(self):

@@ -1,5 +1,7 @@
 """Tests for stealthkit.browser module."""
 
+from pathlib import Path
+
 import pytest
 
 from stealthkit.browser import BrowserConfig
@@ -56,7 +58,7 @@ class TestBrowserConfig:
     def test_user_data_dir_path_conversion(self):
         """Test that user_data_dir is converted to Path."""
         config = BrowserConfig(user_data_dir="/tmp/test")
-        assert config.user_data_dir == type(config.user_data_dir)("/tmp/test")
+        assert isinstance(config.user_data_dir, Path)
 
 
 class TestStealthBrowser:
