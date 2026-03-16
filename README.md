@@ -1,70 +1,152 @@
-# Python Starter Template
+# stealthkit
 
-[![CI Status](https://github.com/JoshCLWren/python-starter-template/workflows/CI/badge.svg)](https://github.com/JoshCLWren/python-starter-template/actions)
+[![CI Status](https://github.com/JoshCLWren/stealthkit/workflows/CI/badge.svg)](https://github.com/JoshCLWren/stealthkit/actions)
 
-A modern Python 3.13 project template with best practices, tooling, and CI/CD preconfigured.
+Playwright stealth automation for anti-detection browser automation.
+
+## Overview
+
+stealthkit provides a comprehensive suite of tools for browser automation that evades detection systems. Built on Playwright with stealth patches, human behavior simulation, and efficient resource management.
 
 ## Features
 
-- **Python 3.13** with type hints throughout
-- **uv** for fast dependency management
-- **pytest** with 96% minimum test coverage
-- **ruff** for linting and formatting
-- **pyright** for static type checking
-- **Pre-commit hooks** to enforce code quality
-- **GitHub Actions CI** for automated testing
-- **Project initialization** via `make init`
+- **StealthBrowser**: Async context manager for anti-detection browser automation
+- **PagePool**: Semaphore-backed async page pool for concurrent scraping
+- **Stealth Patches**: JavaScript injection patches for anti-detection
+- **Human Behavior Simulation**: Delays, mouse movements, and scrolling
+- **Cookie Persistence**: Save/load cookies to JSON
+- **User Agent Generation**: Realistic user agent strings
+- **Rate Limiting**: Exponential backoff for request throttling
 
-## Quick Start
+## Tech Stack
+
+- **Python 3.13+** with type hints throughout
+- **Playwright**: Browser automation
+- **playwright-stealth**: Anti-detection patches
+- **structlog**: Structured logging
+
+## Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/JoshCLWren/python-starter-template.git
-cd python-starter-template
-
-# Initialize with your project name
-make init NAME=my-awesome-project
+git clone https://github.com/JoshCLWren/stealthkit.git
+cd stealthkit
 
 # Install dependencies
 uv sync --all-extras
 
-# Activate the virtual environment (do this once per session)
-source .venv/bin/activate
+# Install Playwright browsers
+playwright install chromium
+```
 
-# Run tests
-pytest
+## Quick Start
 
-# Run your application
-python main.py --name World --value 42
+```python
+import asyncio
+from stealthkit import StealthBrowser, BrowserConfig
+
+async def main():
+    # Basic usage with default configuration
+    async with StealthBrowser() as browser:
+        page = await browser.new_page()
+        await page.goto("https://example.com")
+        content = await page.content()
+        print(content)
+
+    # With custom configuration
+    config = BrowserConfig(
+        headless=False,
+        stealth_level="maximum",
+        viewport={"width": 1920, "height": 1080},
+        locale="en-US",
+        timezone="America/Chicago"
+    )
+    async with StealthBrowser(config) as browser:
+        page = await browser.new_page()
+        await page.goto("https://example.com")
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+## Usage Examples
+
+### Page Pool for Concurrent Scraping
+
+```python
+from stealthkit import StealthBrowser, PagePool
+
+async def scrape_with_pool(urls: list[str]):
+    async with StealthBrowser() as browser:
+        pool = PagePool(size=5, browser_context=browser.context)
+        await pool.initialize()
+
+        async with pool.acquire() as page:
+            await page.goto(urls[0])
+            content = await page.content()
+```
+
+### Human Behavior Simulation
+
+```python
+from stealthkit import StealthBrowser, navigate_with_human_behavior
+
+async def human_like_scraping(url: str):
+    async with StealthBrowser() as browser:
+        page = await browser.new_page()
+        await navigate_with_human_behavior(page, url)
+        # Automatically adds delays, mouse movements, and scrolling
+```
+
+### Cookie Persistence
+
+```python
+from stealthkit import StealthBrowser, save_cookies, load_cookies
+
+async def scrape_with_cookies():
+    async with StealthBrowser() as browser:
+        page = await browser.new_page()
+        
+        # Load existing cookies
+        await load_cookies(page, "cookies.json")
+        
+        await page.goto("https://example.com")
+        
+        # Save cookies for next session
+        await save_cookies(page, "cookies.json")
+```
+
+### Rate Limiting
+
+```python
+from stealthkit import RateLimiter
+
+# Rate limiter with exponential backoff
+limiter = RateLimiter(max_requests=10, window_seconds=60)
+
+async def make_request():
+    await limiter.acquire()
+    # Make your request here
 ```
 
 ## Development Workflow
 
 ### First Time Setup
 
-1. **Rename the project**:
-   ```bash
-   make init NAME=your-project-name
-   ```
+```bash
+# Install dependencies
+uv sync --all-extras
 
-2. **Install dependencies**:
-   ```bash
-   uv sync --all-extras
-   ```
+# Install Playwright browsers
+playwright install chromium
 
-3. **Activate the virtual environment**:
-   ```bash
-   source .venv/bin/activate
-   ```
+# Activate the virtual environment (do this once per session)
+source .venv/bin/activate
+```
 
 ### Daily Development
 
-Once the virtual environment is activated:
-
 ```bash
-# Run the application
-python main.py --name World --value 42
-
 # Run tests
 pytest
 
@@ -80,7 +162,6 @@ ruff format .
 
 ### Make Commands
 
-- `make init NAME=your-project` - Initialize with new project name
 - `make lint` - Run all linting checks (ruff + pyright)
 - `make pytest` - Run the test suite
 - `make venv` - Create virtual environment
@@ -89,27 +170,54 @@ ruff format .
 ## Project Structure
 
 ```
-.
-├── example_module/          # Main package (rename via make init)
-│   ├── __init__.py
-│   └── core.py             # Core business logic
-├── tests/                   # Test suite
-│   ├── conftest.py         # pytest fixtures
-│   └── test_example.py     # Example tests
-├── .github/
-│   ├── actions/setup/       # CI setup action
-│   └── workflows/ci.yml    # CI pipeline
+stealthkit/
+├── stealthkit/           # Main package
+│   ├── __init__.py      # Package exports
+│   ├── browser.py       # StealthBrowser and BrowserConfig
+│   ├── pool.py          # PagePool for concurrent scraping
+│   ├── stealth.py       # Anti-detection patches
+│   ├── human.py         # Human behavior simulation
+│   ├── cookies.py       # Cookie persistence
+│   ├── agents.py        # User agent generation
+│   └── ratelimit.py     # Rate limiting
+├── tests/               # Test suite
+│   ├── conftest.py      # pytest fixtures
+│   └── test_*.py        # Module tests
 ├── scripts/
-│   └── lint.sh            # Linting script
-├── main.py                # Application entrypoint
-├── pyproject.toml        # Project configuration
-├── uv.lock               # Dependency lockfile
-└── .gitignore           # Git ignore rules
+│   └── lint.sh         # Linting script
+├── pyproject.toml      # Project configuration
+└── uv.lock             # Dependency lockfile
 ```
+
+## Configuration
+
+### BrowserConfig Options
+
+```python
+from stealthkit import BrowserConfig
+
+config = BrowserConfig(
+    headless=True,                    # Run in headless mode
+    user_data_dir="./user_data",      # Directory for persistent data
+    user_agent=None,                  # Custom user agent string
+    viewport={"width": 1920, "height": 1080},
+    locale="en-US",                   # Browser locale
+    timezone="America/Chicago",       # Browser timezone
+    extensions=[],                    # Extension paths to load
+    disable_animations=True,          # Disable CSS animations
+    stealth_level="standard"          # "basic", "standard", or "maximum"
+)
+```
+
+### Stealth Levels
+
+- **basic**: Minimal anti-detection patches
+- **standard**: Balanced protection (default)
+- **maximum**: All available stealth patches
 
 ## Testing
 
-The template uses pytest with coverage reporting:
+The project uses pytest with coverage reporting:
 
 ```bash
 # Run all tests
@@ -119,13 +227,13 @@ pytest
 pytest -v
 
 # Run specific test file
-pytest tests/test_example.py
+pytest tests/test_browser.py
 
 # Run with coverage
-pytest --cov=example_module --cov-report=html
+pytest --cov=stealthkit --cov-report=html
 ```
 
-**Coverage requirement**: Minimum 96% (configured in pyproject.toml)
+**Coverage requirement**: Minimum 50% (configured in pyproject.toml)
 
 ## Code Quality
 
@@ -167,63 +275,6 @@ The hook will block commits with issues. To test manually:
 make githook
 ```
 
-## Configuration
-
-### Python Version
-
-Default is Python 3.13. To change:
-
-1. Update `requires-python` in `pyproject.toml`
-2. Update `target-version` in `pyproject.toml`
-3. Update `.python-version` file
-4. Recreate venv: `rm -rf .venv && uv venv`
-
-### Coverage Threshold
-
-Set in `pyproject.toml`:
-
-```toml
-[tool.pytest.ini_options]
-addopts = ["--cov-fail-under=96"]
-```
-
-### Lint Rules
-
-Configure in `pyproject.toml` under `[tool.ruff]`:
-
-```toml
-[tool.ruff]
-line-length = 100
-target-version = "py313"
-```
-
-## CI/CD
-
-GitHub Actions runs on every push to main and on pull requests:
-
-- **Lint job**: Runs ruff and pyright
-- **Tests job**: Runs pytest with coverage
-
-View pipeline status in the Actions tab of the repository.
-
-## Dependency Management
-
-The project uses uv for fast dependency management:
-
-```bash
-# Add a new dependency
-uv add package-name
-
-# Add dev dependency
-uv add --dev package-name
-
-# Remove dependency
-uv remove package-name
-
-# Update dependencies
-uv sync
-```
-
 ## Contributing
 
 1. Fork the repository
@@ -240,11 +291,10 @@ MIT License - see LICENSE file for details
 
 ## Credits
 
-Template created by Josh Wren
+Created by Josh Wren
 
 ## Related
 
-- [uv Documentation](https://docs.astral.sh/uv/)
-- [pytest Documentation](https://docs.pytest.org/)
-- [ruff Documentation](https://docs.astral.sh/ruff/)
-- [pyright Documentation](https://microsoft.github.io/pyright/)
+- [Playwright Documentation](https://playwright.dev/python/)
+- [playwright-stealth](https://github.com/AtuboDad/playwright_stealth)
+- [structlog Documentation](https://www.structlog.org/)
