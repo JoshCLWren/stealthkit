@@ -147,9 +147,6 @@ class StealthBrowser:
         if user_data_dir:
             user_data_dir.mkdir(parents=True, exist_ok=True)
 
-        if self.config.user_agent:
-            launch_options["user_agent"] = self.config.user_agent
-
         self._logger.debug(
             "browser.launching",
             headless=self.config.headless,
@@ -157,9 +154,12 @@ class StealthBrowser:
         )
 
         if user_data_dir:
+            launch_opts = dict(launch_options)
+            if self.config.user_agent:
+                launch_opts["user_agent"] = self.config.user_agent
             self.context = await self.playwright.chromium.launch_persistent_context(
                 str(user_data_dir),
-                **launch_options,
+                **launch_opts,
                 viewport=self.config.viewport,  # type: ignore[arg-type]
                 locale=self.config.locale,
                 timezone_id=self.config.timezone,
